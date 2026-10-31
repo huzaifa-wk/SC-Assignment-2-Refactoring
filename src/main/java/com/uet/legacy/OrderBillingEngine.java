@@ -7,31 +7,51 @@ package com.uet.legacy;
 import java.util.List;
 import java.util.Map;
 
-/**
- *
- * @author codez
- */
 public class OrderBillingEngine {
 
-    private final DiscountCalculator discountCalculator
-            = new DiscountCalculator();
+    private final DiscountCalculator discountCalculator;
+    private final TaxCalculator taxCalculator;
+    private final PaymentProcessor paymentProcessor;
+    private final NotificationProcessor notificationProcessor;
+    private final OrderRepository orderRepository;
+    private final OrderValidator orderValidator;
+    private final OrderCalculator orderCalculator;
 
-    private final TaxCalculator taxCalculator
-            = new TaxCalculator();
+    // Default constructor preserves existing usage
+    public OrderBillingEngine() {
 
-    private final PaymentProcessor paymentProcessor = new PaymentProcessor();
+        this(
+                new DiscountCalculator(),
+                new TaxCalculator(),
+                new PaymentProcessor(),
+                new NotificationProcessor(),
+                new OrderRepository(),
+                new OrderValidator(),
+                new OrderCalculator()
+        );
+    }
 
-    private final NotificationProcessor notificationProcessor
-            = new NotificationProcessor();
+    // Constructor Dependency Injection
+    public OrderBillingEngine(
+            DiscountCalculator discountCalculator,
+            TaxCalculator taxCalculator,
+            PaymentProcessor paymentProcessor,
+            NotificationProcessor notificationProcessor,
+            OrderRepository orderRepository,
+            OrderValidator orderValidator,
+            OrderCalculator orderCalculator) {
 
-    private final OrderRepository orderRepository = new OrderRepository();
-
-    private final OrderValidator orderValidator = new OrderValidator();
-
-    private final OrderCalculator orderCalculator = new OrderCalculator();
+        this.discountCalculator = discountCalculator;
+        this.taxCalculator = taxCalculator;
+        this.paymentProcessor = paymentProcessor;
+        this.notificationProcessor = notificationProcessor;
+        this.orderRepository = orderRepository;
+        this.orderValidator = orderValidator;
+        this.orderCalculator = orderCalculator;
+    }
 
     public boolean processOrder(Map<String, Object> orderData) {
-        // 1. Input Validation
+
         if (!orderValidator.isValidOrder(orderData)) {
             return false;
         }
@@ -42,10 +62,9 @@ public class OrderBillingEngine {
         List<Map<String, Object>> items
                 = (List<Map<String, Object>>) orderData.get("items");
 
-        // 2. Total & Discount Calculation (Long method, primitive types, magic numbers)
-        double rawTotal = orderCalculator.calculateRawTotal(items);
+        double rawTotal
+                = orderCalculator.calculateRawTotal(items);
 
-        // Hardcoded discount rules with magic percentages
         String customerType
                 = (String) orderData.getOrDefault("customerType", "REGULAR");
 
@@ -57,11 +76,8 @@ public class OrderBillingEngine {
 
         double netAmount = rawTotal - discount;
 
-        // Hardcoded Tax Rules by Country
         String country
                 = (String) orderData.getOrDefault("country", "PK");
-
-        netAmount = rawTotal - discount;
 
         double tax = taxCalculator.calculateTax(
                 netAmount,
@@ -70,11 +86,8 @@ public class OrderBillingEngine {
 
         double payableAmount = netAmount + tax;
 
-        // 3. Payment Processing using Strategy Pattern
         String paymentMethod
                 = (String) orderData.getOrDefault("paymentMethod", "CASH");
-
-        String paymentStatus = "FAILED";
 
         boolean paymentSuccessful = paymentProcessor.processPayment(
                 paymentMethod,
@@ -85,6 +98,8 @@ public class OrderBillingEngine {
         if (!paymentSuccessful) {
             return false;
         }
+
+        String paymentStatus;
 
         if (paymentMethod.equals("CASH_ON_DELIVERY")) {
             paymentStatus = "PENDING_CASH";
@@ -98,12 +113,12 @@ public class OrderBillingEngine {
                 paymentStatus
         );
 
-        // 5. Direct Notification Dispatch (Coupled side-effect)
         notificationProcessor.processNotification(
                 orderData,
                 email,
                 payableAmount
         );
+
         return true;
     }
 
