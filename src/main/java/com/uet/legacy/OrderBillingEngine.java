@@ -26,41 +26,24 @@ public class OrderBillingEngine {
 
     private final OrderRepository orderRepository = new OrderRepository();
 
+    private final OrderValidator orderValidator = new OrderValidator();
+
+    private final OrderCalculator orderCalculator = new OrderCalculator();
+
     public boolean processOrder(Map<String, Object> orderData) {
-        // 1. Input Validation (Messy nested validation and console error printing)
-        if (orderData == null || orderData.isEmpty()) {
-            System.out.println("Error: Order data is empty!");
+        // 1. Input Validation
+        if (!orderValidator.isValidOrder(orderData)) {
             return false;
         }
 
         String email = (String) orderData.get("customerEmail");
-        if (email == null || !email.contains("@")) {
-            System.out.println("Error: Invalid customer email!");
-            return false;
-        }
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> items = (List<Map<String, Object>>) orderData.get("items");
-        if (items == null || items.isEmpty()) {
-            System.out.println("Error: Cart has no items!");
-            return false;
-        }
+        List<Map<String, Object>> items
+                = (List<Map<String, Object>>) orderData.get("items");
 
         // 2. Total & Discount Calculation (Long method, primitive types, magic numbers)
-        double rawTotal = 0.0;
-        for (Map<String, Object> item : items) {
-            if (!item.containsKey("price") || !item.containsKey("quantity")) {
-                System.out.println("Error: Missing item price or quantity!");
-                return false;
-            }
-            double price = (double) item.get("price");
-            int quantity = (int) item.get("quantity");
-            if (price <= 0 || quantity <= 0) {
-                System.out.println("Error: Invalid price or quantity for item!");
-                return false;
-            }
-            rawTotal += price * quantity;
-        }
+        double rawTotal = orderCalculator.calculateRawTotal(items);
 
         // Hardcoded discount rules with magic percentages
         String customerType
