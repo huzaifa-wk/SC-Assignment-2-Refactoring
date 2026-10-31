@@ -23,6 +23,9 @@ public class OrderBillingEngine {
             = new TaxCalculator();
 
     private final PaymentProcessor paymentProcessor = new PaymentProcessor();
+
+    private final NotificationProcessor notificationProcessor
+            = new NotificationProcessor();
     // Bad Practice 1: Hardcoded file paths and direct file manipulation
     private String logFilePath = "order_audit.log";
 
@@ -118,16 +121,11 @@ public class OrderBillingEngine {
         }
 
         // 5. Direct Notification Dispatch (Coupled side-effect)
-        String notifyChannel = (String) orderData.getOrDefault("notifyChannel", "EMAIL");
-        if (notifyChannel.equals("EMAIL")) {
-            System.out.println("[EMAIL DISPATCHED] To: " + email + " | Your order of PKR "
-                    + String.format("%.2f", payableAmount) + " is confirmed!");
-        } else if (notifyChannel.equals("SMS")) {
-            String phone = (String) orderData.getOrDefault("phone", "0300-0000000");
-            System.out.println("[SMS DISPATCHED] To: " + phone + " | Order confirmed! Paid: PKR "
-                    + String.format("%.2f", payableAmount));
-        }
-
+        notificationProcessor.processNotification(
+                orderData,
+                email,
+                payableAmount
+        );
         return true;
     }
 
