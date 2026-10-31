@@ -11,9 +11,21 @@ public class NotificationProcessor {
     private final NotificationService emailNotification;
     private final NotificationService smsNotification;
 
+    // Default constructor preserves existing application behavior
     public NotificationProcessor() {
-        this.emailNotification = new EmailNotification();
-        this.smsNotification = new SmsNotification();
+        this(
+                new EmailNotification(),
+                new SmsNotification()
+        );
+    }
+
+    // Constructor injection for independent testing
+    public NotificationProcessor(
+            NotificationService emailNotification,
+            NotificationService smsNotification) {
+
+        this.emailNotification = emailNotification;
+        this.smsNotification = smsNotification;
     }
 
     public void processNotification(
