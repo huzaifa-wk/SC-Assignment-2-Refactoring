@@ -13,11 +13,14 @@ public class EasyPaisaPayment implements PaymentStrategy {
 
         String mobileNumber = (String) orderData.get("mobileNumber");
 
-        if (mobileNumber != null && mobileNumber.matches("03\\d{9}")) {
-            System.out.println("EasyPaisa payment successful.");
-            return true;
+        if (mobileNumber != null
+                && mobileNumber.length() == 11
+                && mobileNumber.startsWith("03")) {
+            {
+                System.out.println("EasyPaisa payment successful.");
+                return true;
+            }
         }
-
         return false;
     }
 }
